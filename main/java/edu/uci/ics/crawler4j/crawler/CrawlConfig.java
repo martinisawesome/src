@@ -28,7 +28,7 @@ import edu.uci.ics.crawler4j.crawler.authentication.AuthInfo;
 
 public class CrawlConfig
 {
-
+    public static final int DEFAULT_POLITENESS = 500;
     /**
      * The folder which will be used by crawler for storing the intermediate
      * crawl data. The content of this folder should not be modified manually.
@@ -68,7 +68,7 @@ public class CrawlConfig
      * Politeness delay in milliseconds (delay between sending two requests to
      * the same host).
      */
-    private int politenessDelay = 300;
+    private int politenessDelay = DEFAULT_POLITENESS;
 
     /**
      * Should we also crawl https pages?
@@ -306,7 +306,10 @@ public class CrawlConfig
      */
     public void setPolitenessDelay(int politenessDelay)
     {
-        this.politenessDelay = politenessDelay;
+        if (politenessDelay > DEFAULT_POLITENESS)
+        {
+            this.politenessDelay = politenessDelay;
+        }
     }
 
     public boolean isIncludeHttpsPages()

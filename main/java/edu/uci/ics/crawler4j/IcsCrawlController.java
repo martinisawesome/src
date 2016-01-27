@@ -15,7 +15,7 @@ public class IcsCrawlController
 
     public static void main(String[] args) throws Exception
     {
-        int numberOfCrawlers = 1;   // TODO more?
+        int numberOfCrawlers = 1;   // TODO more? 7?
 
         logger.info("Number of crawler: "+ numberOfCrawlers);
         CrawlConfig config = new CrawlConfig();
