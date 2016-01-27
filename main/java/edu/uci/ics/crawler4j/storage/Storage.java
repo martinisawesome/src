@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Used to store everything that is found by the web crawler!
+ * Used to store everything that is found by the web crawler! Basic indexer just 
+ * to initial rip some data from raw documents.
  */
 public class Storage
 {
@@ -19,8 +20,8 @@ public class Storage
     private final List<FreqPair<String>> wordCount;
     private final Map<String, Integer> wordCountMap;
 
-    private final List<FreqPair<NGram>> twoGramCount;
-    private final Map<NGram, Integer> twoGrmaMap;
+    private final List<FreqPair<NGram>> threeGramCount;
+    private final Map<NGram, Integer> threeGramMap;
 
     private int longestPageLength;
     private String longestPage;
@@ -32,9 +33,15 @@ public class Storage
         pages = new LinkedList<>();
         subdomains = new LinkedList<>();
         wordCount = new LinkedList<>();
-        twoGramCount = new LinkedList<>();
+        threeGramCount = new LinkedList<>();
         wordCountMap = new HashMap<>();
-        twoGrmaMap = new HashMap<>();
+        threeGramMap = new HashMap<>();
+    }
+    
+    public void processAllPages()
+    {
+        // for each page
+        // add page
     }
 
     public void addPage(String page)
@@ -55,7 +62,7 @@ public class Storage
             //Compute Word Freq             //TODO ignore stop words!!!
             //TODO  computeWordFrequencies(wordCountMap, wordCount, List<String> tokenList) on this page
 
-            //TODO    computeNGramFrequencies(twoGrmaMap, nGramCount, List<String> tokenList, 2)
+            //TODO    computeNGramFrequencies(twoGrmaMap, nGramCount, List<String> tokenList, 3)
             pages.add(page);
         }
     }
@@ -101,9 +108,9 @@ public class Storage
 
     public List<FreqPair<NGram>> get2GramCount()
     {
-        //find  the 20 most common 2-grams
-        Collections.sort(twoGramCount);
-        return twoGramCount;
+        //find  the 20 most common 3-grams
+        Collections.sort(threeGramCount);
+        return threeGramCount;
     }
 
 }
