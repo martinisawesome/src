@@ -6,26 +6,31 @@ import edu.uci.ics.crawler4j.def.UrlStartingSeed;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
+import edu.uci.ics.crawler4j.storage.FileSystem;
 
 public class IcsCrawlController
 {
+
     public static void main(String[] args) throws Exception
     {
+
         int numberOfCrawlers = 1;   // TODO more? 7?
 
         CrawlConfig config = new CrawlConfig();
 
-        config.setCrawlStorageFolder("E:\\Crawl\\");
+        config.setCrawlStorageFolder(FileSystem.CRAWLER_DIRECTORY);
 
-        config.setPolitenessDelay(1000);    //TODO
+        config.setUserAgentString("Test Crawler");  //TODO remove this!!!
+
+        config.setPolitenessDelay(5000);    //TODO
 
         /*
          * You can set the maximum crawl depth here. The default value is -1 for
          * unlimited depth
          */
-        config.setMaxDepthOfCrawling(2);
+        config.setMaxDepthOfCrawling(-1);
 
-        config.setMaxPagesToFetch(1);
+        config.setMaxPagesToFetch(1000);
 
         config.setIncludeBinaryContentInCrawling(false);
 

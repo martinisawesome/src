@@ -31,7 +31,7 @@ public class WebURL implements Serializable
     private static final long serialVersionUID = 1L;
 
     @PrimaryKey
-    private String url;
+    private String urlString;
 
     private int docid;
     private int parentDocid;
@@ -62,12 +62,12 @@ public class WebURL implements Serializable
      */
     public String getURL()
     {
-        return url;
+        return urlString;
     }
 
     public void setURL(String url)
     {
-        this.url = url;
+        this.urlString = url;
 
         int domainStartIdx = url.indexOf("//") + 2;
         int domainEndIdx = url.indexOf('/', domainStartIdx);
@@ -75,7 +75,7 @@ public class WebURL implements Serializable
         domain = url.substring(domainStartIdx, domainEndIdx);
         subDomain = "";
         String[] parts = domain.split("\\.");
-        if (parts.length > 2)
+        if (parts.length > 3)
         {
             domain = parts[parts.length - 2] + "." + parts[parts.length - 1];
             int limit = 2;
@@ -102,8 +102,7 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * unique document id of the parent page. The parent page is the
+     * @return unique document id of the parent page. The parent page is the
      * page in which the Url of this page is first observed.
      */
     public int getParentDocid()
@@ -117,9 +116,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * url of the parent page. The parent page is the page in which
-     * the Url of this page is first observed.
+     * @return url of the parent page. The parent page is the page in which the
+     * Url of this page is first observed.
      */
     public String getParentUrl()
     {
@@ -132,9 +130,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * crawl depth at which this Url is first observed. Seed Urls
-     * are at depth 0. Urls that are extracted from seed Urls are at depth 1, etc.
+     * @return crawl depth at which this Url is first observed. Seed Urls are at
+     * depth 0. Urls that are extracted from seed Urls are at depth 1, etc.
      */
     public short getDepth()
     {
@@ -147,8 +144,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * domain of this Url. For 'http://www.example.com/sample.htm', domain will be 'example.com'
+     * @return domain of this Url. For 'http://www.example.com/sample.htm',
+     * domain will be 'example.com'
      */
     public String getDomain()
     {
@@ -161,8 +158,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * path of this Url. For 'http://www.example.com/sample.htm', domain will be 'sample.htm'
+     * @return path of this Url. For 'http://www.example.com/sample.htm', domain
+     * will be 'sample.htm'
      */
     public String getPath()
     {
@@ -175,8 +172,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return
-     * anchor string. For example, in <a href="example.com">A sample anchor</a>
+     * @return anchor string. For example, in <a href="example.com">A sample
+     * anchor</a>
      * the anchor string is 'A sample anchor'
      */
     public String getAnchor()
@@ -190,7 +187,8 @@ public class WebURL implements Serializable
     }
 
     /**
-     * @return priority for crawling this URL. A lower number results in higher priority.
+     * @return priority for crawling this URL. A lower number results in higher
+     * priority.
      */
     public byte getPriority()
     {
@@ -204,7 +202,8 @@ public class WebURL implements Serializable
 
     /**
      * @return tag in which this URL is found
-     * */
+     *
+     */
     public String getTag()
     {
         return tag;
@@ -218,7 +217,7 @@ public class WebURL implements Serializable
     @Override
     public int hashCode()
     {
-        return url.hashCode();
+        return urlString.hashCode();
     }
 
     @Override
@@ -234,13 +233,13 @@ public class WebURL implements Serializable
         }
 
         WebURL otherUrl = (WebURL) o;
-        return (url != null) && url.equals(otherUrl.getURL());
+        return (urlString != null) && urlString.equals(otherUrl.getURL());
 
     }
 
     @Override
     public String toString()
     {
-        return url;
+        return urlString;
     }
 }
