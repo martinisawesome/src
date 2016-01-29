@@ -2,6 +2,9 @@ package edu.uci.ics.crawler4j.textprocessor;
 
 import java.util.LinkedList;
 
+/**
+ * This is not used!
+ */
 public class SubDomain
 {
     private final String url;

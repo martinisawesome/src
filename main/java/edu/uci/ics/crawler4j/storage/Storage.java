@@ -2,7 +2,7 @@ package edu.uci.ics.crawler4j.storage;
 
 import edu.uci.ics.crawler4j.textprocessor.FreqPair;
 import edu.uci.ics.crawler4j.textprocessor.NGram;
-import edu.uci.ics.crawler4j.textprocessor.SubDomain;
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -13,10 +13,10 @@ import java.util.Map;
  * Used to store everything that is found by the web crawler! Basic indexer just 
  * to initial rip some data from raw documents.
  */
-public class Storage
+public final class Storage
 {
     private final LinkedList<String> pages;
-    private final LinkedList<SubDomain> subdomains;
+    private final LinkedList<String> subdomains;
     private final List<FreqPair<String>> wordCount;
     private final Map<String, Integer> wordCountMap;
 
@@ -31,30 +31,39 @@ public class Storage
         longestPage = "";
         longestPageLength = 0;
         pages = new LinkedList<>();
-        subdomains = new LinkedList<>();
+        subdomains = FileSystem.findAllSubdomains();
         wordCount = new LinkedList<>();
         threeGramCount = new LinkedList<>();
         wordCountMap = new HashMap<>();
         threeGramMap = new HashMap<>();
+        
+        //Process everything
+        processAllPages();
     }
     
     public void processAllPages()
     {
-        // for each page
-        // add page
+        for (File f : FileSystem.getAllContentTextFiles())
+        {
+            addPage(f);
+        }
     }
 
-    public void addPage(String page)
+    public void addPage(File page)
     {
-        if (!constainsPage(page))
+        
+        if (!constainsPage(page.getName()))
         {
+            
+            //TODO, hash content pages for duplicates?
+            
             //==================================================================
             //Compute Longest Page
 
             // If  page length > longestPageLength
             {
                 //longestPageLength = page length
-                longestPage = page;
+                longestPage = page.getName();
                 longestPageLength++;    // TODO remove this
             }
 
@@ -63,7 +72,11 @@ public class Storage
             //TODO  computeWordFrequencies(wordCountMap, wordCount, List<String> tokenList) on this page
 
             //TODO    computeNGramFrequencies(twoGrmaMap, nGramCount, List<String> tokenList, 3)
-            pages.add(page);
+            pages.add(page.getName());
+        }
+        else
+        {
+            System.out.println("Duplicate Page: " + page.getName());
         }
     }
 

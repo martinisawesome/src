@@ -25,6 +25,7 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 
 import edu.uci.ics.crawler4j.crawler.authentication.AuthInfo;
+import edu.uci.ics.crawler4j.storage.FileSystem;
 
 public class CrawlConfig
 {
@@ -218,6 +219,10 @@ public class CrawlConfig
      */
     public void setResumableCrawling(boolean resumableCrawling)
     {
+        if (!resumableCrawling)
+        {
+            FileSystem.clearFrontierDirectory();
+        }
         this.resumableCrawling = resumableCrawling;
     }
 

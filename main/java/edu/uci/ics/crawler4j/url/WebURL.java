@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
+import edu.uci.ics.crawler4j.def.Strings;
+import edu.uci.ics.crawler4j.storage.FileSystem;
 
 /**
  * @author Yasser Ganjisaffar
@@ -65,6 +67,10 @@ public class WebURL implements Serializable
         return urlString;
     }
 
+    /**
+     * Note I had to remake this to work for ICS domain
+     * @param url 
+     */
     public void setURL(String url)
     {
         this.urlString = url;
@@ -77,20 +83,24 @@ public class WebURL implements Serializable
         String[] parts = domain.split("\\.");
         if (parts.length > 3)
         {
-            domain = parts[parts.length - 2] + "." + parts[parts.length - 1];
-            int limit = 2;
+            domain = parts[parts.length - 3] + "."+parts[parts.length - 2] + "." + parts[parts.length - 1];
+            int limit = 3;
             if (TLDList.getInstance().contains(domain))
             {
-                domain = parts[parts.length - 3] + "." + domain;
-                limit = 3;
+                domain = parts[parts.length - 4] + "." + domain;
+                limit = 4;
             }
+            
             for (int i = 0; i < (parts.length - limit); i++)
             {
-                if (!subDomain.isEmpty())
+                if (!"wwww".equals(parts[i]))
                 {
-                    subDomain += ".";
+                    if (!subDomain.isEmpty())
+                    {
+                        subDomain += ".";
+                    }
+                    subDomain += parts[i];
                 }
-                subDomain += parts[i];
             }
         }
         path = url.substring(domainEndIdx);
@@ -154,6 +164,10 @@ public class WebURL implements Serializable
 
     public String getSubDomain()
     {
+        if (subDomain.isEmpty())
+        {
+            return Strings.EMPTY_FIELD;
+        }
         return subDomain;
     }
 

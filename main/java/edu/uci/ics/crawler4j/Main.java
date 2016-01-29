@@ -37,7 +37,7 @@ public class Main
         System.out.println(String.format("Subdomain Count: %d", storage.getSubDomainCount()));
         storage.writeSubDomainsToText();
 
-        //4. What is the longest page in terms of number of words? (HTML markup doesn’t count as words)
+        //4. What is the longest page in terms of number of words? (HTML markup doesn’t count as words) //TODO do not cut out stop words for this
         System.out.println(String.format("Longest Page: %s", storage.getLongestPageName()));
 
         //5. What are the 500 most common words in this domain? (Ignore English stop words, which can be found, for example, here) Submit the list of the 500 most common words ordered by frequency.

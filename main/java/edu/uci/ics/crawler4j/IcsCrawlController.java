@@ -2,6 +2,7 @@ package edu.uci.ics.crawler4j;
 
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
+import edu.uci.ics.crawler4j.def.TimeConstants;
 import edu.uci.ics.crawler4j.def.UrlStartingSeed;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
@@ -14,7 +15,7 @@ public class IcsCrawlController
     public static void main(String[] args) throws Exception
     {
 
-        int numberOfCrawlers = 1;   // TODO more? 7?
+        int numberOfCrawlers = 4;   // TODO more? 7?
 
         CrawlConfig config = new CrawlConfig();
 
@@ -24,23 +25,29 @@ public class IcsCrawlController
 
         config.setPolitenessDelay(5000);    //TODO
 
-        /*
-         * You can set the maximum crawl depth here. The default value is -1 for
-         * unlimited depth
-         */
         config.setMaxDepthOfCrawling(-1);
 
+        //TODO set to -1
         config.setMaxPagesToFetch(1000);
 
+        // Don't grab binary stuff as content
         config.setIncludeBinaryContentInCrawling(false);
+        config.setProcessBinaryContentInCrawling(false);
+        
+        // Crawl links in stuff
+        config.setIncludeHttpsPages(true);
+        config.setFollowRedirects(true);
+        
+        //setMaxConnectionsPerHost
+        //setMaxTotalConnections
+        //setMaxOutgoingLinksToFollow
+        config.setConnectionTimeout(60*TimeConstants.SEC_IN_MS);
+        config.setSocketTimeout(60*TimeConstants.SEC_IN_MS);
 
-        /*
-         * This config parameter can be used to set your crawl to be resumable
-         * (meaning that you can resume the crawl from a previously
-         * interrupted/crashed crawl). Note: if you enable resuming feature and
-         * want to start a fresh crawl, you need to delete the contents of
-         * rootFolder manually.
-         */
+        //set AuthInfo?
+        //set proxy?
+        //setOnlineTldListUpdate?
+        
         config.setResumableCrawling(false);
 
         /*
@@ -51,18 +58,16 @@ public class IcsCrawlController
         RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer);
 
-        /*
-         * For each crawl, you need to add some seed urls. These are the first
-         * URLs that are fetched and then the crawler starts following links
-         * which are found in these pages
-         */
+        // Add Seed URL
         controller.addSeed(UrlStartingSeed.ICS_DOMAIN);
+        controller.addSeed(UrlStartingSeed.TRAP_TESTING);
+        controller.addSeed(UrlStartingSeed.STARTING_DOMAINS);
 
-        /*
-         * Start the crawl. This is a blocking operation, meaning that your code
-         * will reach the line after this only when crawling is finished.
-         */
+        // Start blocking Crawl
         controller.start(IcsCrawler.class, numberOfCrawlers);
+        
+        // Wait for 30 seconds
+        Thread.sleep(30 * TimeConstants.SEC_IN_MS);
 
         // Let the crawler then finish, then shut it down
         controller.shutdown();
