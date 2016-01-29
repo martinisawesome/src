@@ -6,18 +6,13 @@ import edu.uci.ics.crawler4j.def.UrlStartingSeed;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class IcsCrawlController
 {
-    private static final Logger logger = LoggerFactory.getLogger(IcsCrawlController.class);
-
     public static void main(String[] args) throws Exception
     {
         int numberOfCrawlers = 1;   // TODO more? 7?
 
-        logger.info("Number of crawler: "+ numberOfCrawlers);
         CrawlConfig config = new CrawlConfig();
 
         config.setCrawlStorageFolder("E:\\Crawl\\");
@@ -63,5 +58,9 @@ public class IcsCrawlController
          * will reach the line after this only when crawling is finished.
          */
         controller.start(IcsCrawler.class, numberOfCrawlers);
+
+        // Let the crawler then finish, then shut it down
+        controller.shutdown();
+        controller.waitUntilFinish();
     }
 }

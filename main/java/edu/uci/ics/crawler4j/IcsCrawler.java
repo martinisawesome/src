@@ -2,6 +2,7 @@ package edu.uci.ics.crawler4j;
 
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
+import edu.uci.ics.crawler4j.def.Strings;
 import edu.uci.ics.crawler4j.parser.HtmlParseData;
 import edu.uci.ics.crawler4j.url.WebURL;
 import java.util.Set;
@@ -26,18 +27,18 @@ public class IcsCrawler extends WebCrawler
         // Ignore the url if it has an extension that matches our defined set of image extensions.
         if (BAD_EXTENSIONS.matcher(href).matches())
         {
-            System.out.println("Bad Extension, Skipping URL: " + url);
+            System.out.println("  Bad Extension, Skipping URL: " + url);
             return false;
         }
 
         // Only accept the url if it is in the "www.ics.uci.edu" domain and protocol is "http".
         if (!href.startsWith("http://") || !href.contains("ics.uci.edu/"))
         {
-            System.out.println("Bad domain, not ics.uci.edu, Skipping URL: " + url);
+            System.out.println("  Bad domain, not ics.uci.edu, Skipping URL: " + url);
             return false;
         }
-        
-        System.out.println("OKAY: " + url);
+
+        System.out.println("OKAY - Schedule: " + url);
         return true;
     }
 
@@ -56,25 +57,16 @@ public class IcsCrawler extends WebCrawler
         String subDomain = page.getWebURL().getSubDomain();
         String parentUrl = page.getWebURL().getParentUrl();
         String anchor = page.getWebURL().getAnchor();
-//         System.out.println("URL: " + url);
-//
-//         if (page.getParseData() instanceof HtmlParseData) {
-//             HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
-//             String text = htmlParseData.getText();
-//             String html = htmlParseData.getHtml();
-//             Set<WebURL> links = htmlParseData.getOutgoingUrls();
-//
-//             System.out.println("Text length: " + text.length());
-//             System.out.println("Html length: " + html.length());
-//             System.out.println("Number of outgoing links: " + links.size());
-//         }
-        logger.debug("Docid: {}", docid);
-        logger.info("URL: {}", url);
-        logger.debug("Domain: '{}'", domain);
-        logger.debug("Sub-domain: '{}'", subDomain);
-        logger.debug("Path: '{}'", path);
-        logger.debug("Parent page: {}", parentUrl);
-        logger.debug("Anchor text: {}", anchor);
+
+        //TODO print to indexer
+        String title = docid + " " + url;
+
+        //TODO print to logger
+        String information = String.format("DocId: %s%n"
+                                           + "Domain: %s Sub-Domain: %s Path: %s%n"
+                                           + "Parent Page:%s Anchor Text: %s",
+                                           title, domain, subDomain, path, parentUrl, anchor);
+        System.out.println(information);
 
         if (page.getParseData() instanceof HtmlParseData)
         {
@@ -83,21 +75,28 @@ public class IcsCrawler extends WebCrawler
             String html = htmlParseData.getHtml();
             Set<WebURL> links = htmlParseData.getOutgoingUrls();
 
-            logger.debug("Text length: {}", text.length());
-            logger.debug("Html length: {}", html.length());
-            logger.debug("Number of outgoing links: {}", links.size());
+            String moreInformation = String.format("Text Length: %d, Html Length: %d # Outgoing Links: %d",
+                                                   text.length(), html.length(), links.size());
+            System.out.println(moreInformation);
+
+            //TODO print to document
+            //System.out.println(text);
+        }
+        else
+        {
+            //TODO how to get other text?
         }
 
         Header[] responseHeaders = page.getFetchResponseHeaders();
         if (responseHeaders != null)
         {
-            logger.debug("Response headers:");
+            System.out.println("Response headers:");
             for (Header header : responseHeaders)
             {
-                logger.debug("\t{}: {}", header.getName(), header.getValue());
+                System.out.println("\t: " + header.getName() + header.getValue());
             }
         }
 
-        logger.debug("=============");
+        System.out.println(Strings.SPACER);
     }
 }
