@@ -16,13 +16,13 @@ import org.apache.http.Header;
 
 public class IcsCrawler extends WebCrawler
 {
-    private static final boolean SKIP_QUERIES_AND_PARAMETERS = true;
-    private final HashMap<String, LinkedList<String>> PATHING_COMPARES = new HashMap<>();
+    private static final boolean SKIP_QUERIES_AND_PARAMETERS = false;
+    private static final HashMap<String, LinkedList<String>> PATHING_COMPARES = new HashMap<>();
     private static final LinkedList<String> SCHEDULED_URLS = new LinkedList<>();
     private static final Pattern BAD_EXTENSIONS = Pattern.compile(".*\\.(css|js|mp[2-4]|zip|gz|bmp|gif|mpeg"
                                                                   + "|xls|xlsx|jpg|png|pdf|ico|tiff|mid|names"
                                                                   + "|ppt|pptx|bin|7z|rar|dmg|iso|mov|jar|lzip|tar|tgz)$");
-    private static final Pattern CODE_EXTENSIONS = Pattern.compile(".*\\.(java|javac|py|h|cpp|cc|pyc)$");
+    private static final Pattern CODE_EXTENSIONS = Pattern.compile(".*\\.(java|javac|py|h|cpp|cc|pyc|cs)$");
     private static int CURRENT_INDEX = 0;
     private int index;
 
@@ -60,7 +60,7 @@ public class IcsCrawler extends WebCrawler
 
         String fullPath = sb.toString();
 
-        //synchronized (PATHING_COMPARES)
+        synchronized (PATHING_COMPARES)
         {
             LinkedList<String> foundPaths = PATHING_COMPARES.get(fullPath);
             if (foundPaths == null)
@@ -117,6 +117,13 @@ public class IcsCrawler extends WebCrawler
             System.out.println("  Bad domain, not ics.uci.edu, Skipping URL: " + url);
             return false;
         }
+
+//        // TODO remove this!!!
+//        if (!href.contains("calendar"))
+//        {
+//            System.out.println("  Not a calendar, Skipping URL: " + url);
+//            return false;
+//        }
 
         if (SKIP_QUERIES_AND_PARAMETERS)
         {

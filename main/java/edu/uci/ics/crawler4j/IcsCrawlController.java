@@ -15,39 +15,36 @@ public class IcsCrawlController
     public static void main(String[] args) throws Exception
     {
 
-        int numberOfCrawlers = 4;   // TODO more? 7?
+        int numberOfCrawlers = 7;
 
         CrawlConfig config = new CrawlConfig();
 
         config.setCrawlStorageFolder(FileSystem.CRAWLER_DIRECTORY);
 
-        config.setUserAgentString("Test Crawler");  //TODO remove this!!!
-
-        config.setPolitenessDelay(5000);    //TODO
+        config.setPolitenessDelay(1000);    //TODO
 
         config.setMaxDepthOfCrawling(-1);
 
         //TODO set to -1
-        config.setMaxPagesToFetch(1000);
+        config.setMaxPagesToFetch(-1);
 
         // Don't grab binary stuff as content
         config.setIncludeBinaryContentInCrawling(false);
         config.setProcessBinaryContentInCrawling(false);
-        
+
         // Crawl links in stuff
         config.setIncludeHttpsPages(true);
         config.setFollowRedirects(true);
-        
+
         //setMaxConnectionsPerHost
         //setMaxTotalConnections
         //setMaxOutgoingLinksToFollow
-        config.setConnectionTimeout(60*TimeConstants.SEC_IN_MS);
-        config.setSocketTimeout(60*TimeConstants.SEC_IN_MS);
+        config.setConnectionTimeout(60 * TimeConstants.SEC_IN_MS);
+        config.setSocketTimeout(60 * TimeConstants.SEC_IN_MS);
 
         //set AuthInfo?
         //set proxy?
         //setOnlineTldListUpdate?
-        
         config.setResumableCrawling(false);
 
         /*
@@ -65,7 +62,7 @@ public class IcsCrawlController
 
         // Start blocking Crawl
         controller.start(IcsCrawler.class, numberOfCrawlers);
-        
+
         // Wait for 30 seconds
         Thread.sleep(30 * TimeConstants.SEC_IN_MS);
 
