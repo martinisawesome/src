@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
@@ -73,6 +74,7 @@ public class FileSystem
 
     public static LinkedList<File> getAllContentTextFiles()
     {
+        LinkedList<Integer> hashedContents = new LinkedList<>();
         LinkedList<String> titles = new LinkedList<>();
         Pattern numberic = Pattern.compile("[^0-9]");
 
@@ -89,7 +91,7 @@ public class FileSystem
                 }
                 else if (!numberic.matcher(f.getName()).matches())
                 {
-                    domains.add(parseContentFileForText(titles, f));
+                    domains.add(parseContentFileForText(hashedContents, titles, f));
                 }
             }
         }
@@ -99,17 +101,19 @@ public class FileSystem
     /**
      * Parses a content file and returns a new file with no HTML markup
      *
+     * @param hashedContents
      * @param titles
      * @param file
      * @return
      */
-    public static File parseContentFileForText(LinkedList<String> titles, File file)
+    private static File parseContentFileForText(LinkedList<Integer> hashedContents, LinkedList<String> titles, File file)
     {
         File content = new File("Text" + file.getName());
 
         try
         {
-            FileWriter wr = new FileWriter(content);
+            StringBuilder sb = new StringBuilder();
+            FileWriter wr = new FileWriter(content, false);
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             String curr;
@@ -144,18 +148,31 @@ public class FileSystem
                     }
                 }
 
+                //Do not include HTML markup
                 if (curr.equals(Strings.SPACER))
                 {
                     break;
                 }
                 else if (found && !curr.isEmpty())
                 {
-                    wr.write(curr);
-                    wr.write(' ');
+                    sb.append(curr);
+                    sb.append(' ');
                 }
 
             }
 
+            String strings = sb.toString();
+            int hash = strings.hashCode();
+            if (hashedContents.contains(hash))
+            {
+                System.out.println("Duplicate hash for file: " + file.getName());
+            }
+            else
+            {
+                hashedContents.add(hash);
+            }
+
+            wr.write(strings);
             fr.close();
             wr.close();
         }
@@ -168,9 +185,9 @@ public class FileSystem
         return content;
     }
 
-    public static LinkedList<String> findAllSubdomains()
+    public static HashMap<String, Integer> findAllSubdomains()
     {
-        LinkedList<String> domains = new LinkedList<>();
+        HashMap<String, Integer> domains = new HashMap<>();
         File directory = new File(CRAWLER_DIRECTORY);
         File[] files = directory.listFiles();
         if (files != null)
@@ -200,14 +217,21 @@ public class FileSystem
                                     String text = strings[i + 1];
                                     if (strings[i].equals(Strings.SUBDOMAIN_TEXT)
                                         && !text.equals(Strings.EMPTY_FIELD)
-                                        && !"www".equals(text)
-                                        && !domains.contains(text))
+                                        && !"www".equals(text))
                                     {
-                                        domains.add(text);
+                                        Integer count = domains.get(text);
+                                        if (count == null)
+                                        {
+                                            domains.put(text, 1);
+                                        }
+                                        else
+                                        {
+                                            domains.put(text, count + 1);
+                                        }
                                     }
                                 }
 
-                                break;
+                                // Keep looking
                             }
                         }
 

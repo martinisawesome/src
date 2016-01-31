@@ -45,7 +45,7 @@ public class Main
 
         //6. What are the 20 most common 3-grams? (again ignore English stop words) 
         //A 2-gram, in this case, is a sequence of 2 words that aren’t stop words and that haven’t had a stop word in between them. Submit the list of 20 2-grams ordered by frequency.
-        System.out.println(String.format("20 Common N-Grams: %s", printf(storage.get2GramCount())));
+        System.out.println(String.format("20 Common N-Grams: %s", printf(storage.get4GramCount())));
     }
 
     public static <E> String printf(List<E> tokenList)

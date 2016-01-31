@@ -58,7 +58,7 @@ public class CrawlConfig
      * user-agent string that is used for representing your crawler to web
      * servers. See http://en.wikipedia.org/wiki/User_agent for more details
      */
-    private String userAgentString = "IR W16 WebCrawler 54807690 17407977";
+    private String userAgentString = "test";    //IR W16 WebCrawler 54807690 17407977
 
     /**
      * Default request header values.
@@ -222,6 +222,7 @@ public class CrawlConfig
         if (!resumableCrawling)
         {
             FileSystem.clearFrontierDirectory();
+            FileSystem.clearEverything();
         }
         this.resumableCrawling = resumableCrawling;
     }

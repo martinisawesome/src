@@ -6,8 +6,9 @@ import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.def.Strings;
 import edu.uci.ics.crawler4j.parser.HtmlParseData;
 import edu.uci.ics.crawler4j.parser.TextParseData;
-import edu.uci.ics.crawler4j.storage.FileSystem;
+import edu.uci.ics.crawler4j.storage.CrawlerRecorder;
 import edu.uci.ics.crawler4j.url.WebURL;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
@@ -16,7 +17,8 @@ import org.apache.http.Header;
 
 public class IcsCrawler extends WebCrawler
 {
-    private static final boolean SKIP_QUERIES_AND_PARAMETERS = false;
+    private CrawlerRecorder recorder;
+    private static final boolean SKIP_QUERIES_AND_PARAMETERS = true;
     private static final HashMap<String, LinkedList<String>> PATHING_COMPARES = new HashMap<>();
     private static final LinkedList<String> SCHEDULED_URLS = new LinkedList<>();
     private static final Pattern BAD_EXTENSIONS = Pattern.compile(".*\\.(css|js|mp[2-4]|zip|gz|bmp|gif|mpeg"
@@ -28,11 +30,228 @@ public class IcsCrawler extends WebCrawler
 
     @Override
     public void init(int id, CrawlController crawlController)
+    {try
     {
         super.init(id, crawlController);
         this.index = CURRENT_INDEX++;
+        recorder = new CrawlerRecorder(index);
+             }
+        catch (IOException e)
+        {
+            System.err.println("Failed to create recorder for crawler: " + index);
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onBeforeExit()
+    {
+        recorder.close();
     }
 
+
+    @Override
+    public boolean shouldVisit(Page referringPage, WebURL url)
+    {
+
+        String href = url.getURL().toLowerCase();
+        // Ignore the url if it has an extension that matches our defined set of image extensions.
+        if (BAD_EXTENSIONS.matcher(href).matches())
+        {
+            recorder.writePath("  Bad Extension, Skipping URL: " + url);
+            return false;
+        }
+
+        // Ignore code text files
+        if (CODE_EXTENSIONS.matcher(href).matches())
+        {
+            recorder.writePath("  Extension is for code, Skipping URL: " + url);
+            return false;
+        }
+
+        // Only accept the url if it is in the "www.ics.uci.edu" domain and protocol is "http".
+        if (!(href.startsWith("http://") || href.startsWith("https://"))
+            || !href.contains("ics.uci.edu/"))
+        {
+            recorder.writePath("  Bad domain, not ics.uci.edu, Skipping URL: " + url);
+            return false;
+        }
+
+        // TODO remove this!!!
+//        if (!href.contains("calendar") && !href.contains("flamingo") && !href.contains("fano") && !href.contains("archive"))
+//        {
+//            recorder.writePath("  Not a calendar, Skipping URL: " + url);
+//            return false;
+//        }
+
+        if (SKIP_QUERIES_AND_PARAMETERS)
+        {
+            // Skip Queries
+            if (href.contains("?"))
+            {
+                recorder.writePath("  This is a Query, Skipping URL: " + url);
+                return false;
+            }
+
+            // Skip Parameters
+            if (href.contains(";"))
+            {
+                recorder.writePath("  This is a Parameter, Skipping URL: " + url);
+                return false;
+            }
+        }
+
+        if (isSimilarUrl(url))
+        {
+            recorder.writePath("  This URL is too similar to existing URL, Skipping URL: " + url);
+            return false;
+        }
+
+        // Do not visit similar URL's
+        // Do not visit the same page again
+        synchronized (SCHEDULED_URLS)
+        {
+            if (SCHEDULED_URLS.contains(url.getURL()))
+            {
+                recorder.writePath("  Already Visited this URL: " + url);
+                return false;
+            }
+            //This URL is good to schedule!
+            SCHEDULED_URLS.add(url.getURL());
+        }
+
+        recorder.writePath("OKAY - Schedule: " + url);
+        return true;
+    }
+
+    /**
+     * This function is called when a page is fetched and ready to be processed
+     * by your program.
+     */
+    @Override
+    public void visit(Page page)
+    {
+
+        //======================================================================
+        //  _   _                _             _____       __      
+        // | | | |              | |           |_   _|     / _|     
+        // | |_| | ___  __ _  __| | ___ _ __    | | _ __ | |_ ___  
+        // |  _  |/ _ \/ _` |/ _` |/ _ \ '__|   | || '_ \|  _/ _ \ 
+        // | | | |  __/ (_| | (_| |  __/ |     _| || | | | || (_) |
+        // \_| |_/\___|\__,_|\__,_|\___|_|     \___/_| |_|_| \___/
+        //======================================================================
+        int docid = page.getWebURL().getDocid();
+        String url = page.getWebURL().getURL();
+        String domain = page.getWebURL().getDomain();
+        String path = page.getWebURL().getPath();
+        String subDomain = page.getWebURL().getSubDomain();
+        String parentUrl = page.getWebURL().getParentUrl();
+        String anchor = page.getWebURL().getAnchor();
+
+        String docUrl = docid + " " + url;
+
+        recorder.writeHead(String.format("DocId: %s%n"
+                                           + "Domain: %s Sub-Domain: %s Path: %s%n"
+                                           + "Parent Page:%s Anchor Text: %s",
+                                           docUrl, domain, subDomain, path, parentUrl, anchor));
+
+        //======================================================================
+        //  _____             _             _     _   _                 _ _ _             
+        // /  __ \           | |           | |   | | | |               | | (_)            
+        // | /  \/ ___  _ __ | |_ ___ _ __ | |_  | |_| | __ _ _ __   __| | |_ _ __   __ _ 
+        // | |    / _ \| '_ \| __/ _ \ '_ \| __| |  _  |/ _` | '_ \ / _` | | | '_ \ / _` |
+        // | \__/\ (_) | | | | ||  __/ | | | |_  | | | | (_| | | | | (_| | | | | | | (_| |
+        //  \____/\___/|_| |_|\__\___|_| |_|\__| \_| |_/\__,_|_| |_|\__,_|_|_|_| |_|\__, |
+        //                                                                          |___/
+        //======================================================================
+        StringBuilder textBlob = new StringBuilder();
+
+        if (page.getParseData() instanceof HtmlParseData)
+        {
+            HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
+            String title = htmlParseData.getTitle();
+            String text = htmlParseData.getText();
+            String html = htmlParseData.getHtml();
+            Set<WebURL> links = htmlParseData.getOutgoingUrls();
+
+            String moreInformation = String.format("Text Length: %d, Html Length: %d # Outgoing Links: %d",
+                                                   text.length(), html.length(), links.size());
+            recorder.writeHead(moreInformation);  //put this in crawlerHeaderFileName
+
+            textBlob.append(Strings.getBasicHeader("Title")).append("\n");
+            textBlob.append(title).append("\n");
+            textBlob.append(Strings.getBasicHeader("Text")).append("\n");
+            textBlob.append(text).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            textBlob.append(Strings.getBasicHeader("HTML")).append("\n");
+            textBlob.append(html).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            textBlob.append(Strings.getBasicHeader("Meta Tags")).append("\n");
+            textBlob.append(htmlParseData.getMetaTags()).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            textBlob.append(Strings.getBasicHeader("Links")).append("\n");
+            textBlob.append(links).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            recorder.writeContent(docid, textBlob.toString());
+        }
+        else if (page.getParseData() instanceof TextParseData)
+        {
+            TextParseData htmlParseData = (TextParseData) page.getParseData();
+            String text = htmlParseData.getTextContent();
+            Set<WebURL> links = htmlParseData.getOutgoingUrls();
+
+            String moreInformation = String.format("Text Length: %d, # Outgoing Links: %d",
+                                                   text.length(), links.size());
+            recorder.writeHead(moreInformation);
+
+            textBlob.append(Strings.getBasicHeader("Text")).append("\n");
+            textBlob.append(text).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            textBlob.append(Strings.getBasicHeader("Links")).append("\n");
+            textBlob.append(links).append("\n");
+            textBlob.append(Strings.SPACER).append("\n");
+            recorder.writeContent(docid, textBlob.toString());
+        }
+        else
+        {
+            //TODO how to get other text?
+        }
+
+        //======================================================================
+        // ______                                       _   _                _               
+        // | ___ \                                     | | | |              | |              
+        // | |_/ /___  ___ _ __   ___  _ __  ___  ___  | |_| | ___  __ _  __| | ___ _ __ ___ 
+        // |    // _ \/ __| '_ \ / _ \| '_ \/ __|/ _ \ |  _  |/ _ \/ _` |/ _` |/ _ \ '__/ __|
+        // | |\ \  __/\__ \ |_) | (_) | | | \__ \  __/ | | | |  __/ (_| | (_| |  __/ |  \__ \
+        // \_| \_\___||___/ .__/ \___/|_| |_|___/\___| \_| |_/\___|\__,_|\__,_|\___|_|  |___/                                                            
+        //                |_|    
+        //======================================================================
+        //write to crawlerHeaderFileName
+        Header[] responseHeaders = page.getFetchResponseHeaders();
+
+        if (responseHeaders != null)
+        {
+            StringBuilder response = new StringBuilder();
+            response.append("Response headers:");
+            for (Header header : responseHeaders)
+            {
+                response.append("\n: ").append(header.getName()).append(header.getValue());
+            }
+            recorder.writeHead(response.toString());
+        }
+
+        //=================================
+        //  _____          _ 
+        // |  ___|        | |
+        // | |__ _ __   __| |
+        // |  __| '_ \ / _` |
+        // | |__| | | | (_| |
+        // \____/_| |_|\__,_|
+        //================================
+        recorder.writeHead(Strings.SPACER);
+    }
+    
+    
     /**
      * Don't visit URL's that are very similar, just remove numbers
      *
@@ -72,7 +291,6 @@ public class IcsCrawler extends WebCrawler
             //Otherwise, check if we visited a similar path already
             else if (foundPaths.contains(alphaString))
             {
-                System.out.println(alphaString);
                 isSimilar = true;
             }
             else
@@ -84,218 +302,4 @@ public class IcsCrawler extends WebCrawler
         return isSimilar;
     }
 
-    /**
-     * You should implement this function to specify whether the given url
-     * should be crawled or not (based on your crawling logic).
-     *
-     * @return
-     */
-    @Override
-    public boolean shouldVisit(Page referringPage, WebURL url)
-    {
-        String pathingFileName = FileSystem.CRAWLER_PATHING_NAME + index;
-
-        String href = url.getURL().toLowerCase();
-        // Ignore the url if it has an extension that matches our defined set of image extensions.
-        if (BAD_EXTENSIONS.matcher(href).matches())
-        {
-            System.out.println("  Bad Extension, Skipping URL: " + url);
-            return false;
-        }
-
-        // Ignore code text files
-        if (CODE_EXTENSIONS.matcher(href).matches())
-        {
-            System.out.println("  Extension is for code, Skipping URL: " + url);
-            return false;
-        }
-
-        // Only accept the url if it is in the "www.ics.uci.edu" domain and protocol is "http".
-        if (!(href.startsWith("http://") || href.startsWith("https://"))
-            || !href.contains("ics.uci.edu/"))
-        {
-            System.out.println("  Bad domain, not ics.uci.edu, Skipping URL: " + url);
-            return false;
-        }
-
-//        // TODO remove this!!!
-//        if (!href.contains("calendar"))
-//        {
-//            System.out.println("  Not a calendar, Skipping URL: " + url);
-//            return false;
-//        }
-
-        if (SKIP_QUERIES_AND_PARAMETERS)
-        {
-            // Skip Queries
-            if (href.contains("?"))
-            {
-                System.out.println("  This is a Query, Skipping URL: " + url);
-                return false;
-            }
-
-            // Skip Parameters
-            if (href.contains(";"))
-            {
-                System.out.println("  This is a Parameter, Skipping URL: " + url);
-                return false;
-            }
-        }
-
-        if (isSimilarUrl(url))
-        {
-            System.out.println("  This URL is too similar to existing URL, Skipping URL: " + url);
-            return false;
-        }
-
-        // Do not visit similar URL's
-        // Do not visit the same page again
-        synchronized (SCHEDULED_URLS)
-        {
-            if (SCHEDULED_URLS.contains(url.getURL()))
-            {
-                System.out.println("  Already Visited this URL: " + url);
-                return false;
-            }
-            //This URL is good to schedule!
-            SCHEDULED_URLS.add(url.getURL());
-        }
-
-        System.out.println("OKAY - Schedule: " + url);
-        return true;
-    }
-
-    /**
-     * This function is called when a page is fetched and ready to be processed
-     * by your program.
-     */
-    @Override
-    public void visit(Page page)
-    {
-
-        //System.out.println("Crawler Index: " + index);
-        //======================================================================
-        //  _   _                _             _____       __      
-        // | | | |              | |           |_   _|     / _|     
-        // | |_| | ___  __ _  __| | ___ _ __    | | _ __ | |_ ___  
-        // |  _  |/ _ \/ _` |/ _` |/ _ \ '__|   | || '_ \|  _/ _ \ 
-        // | | | |  __/ (_| | (_| |  __/ |     _| || | | | || (_) |
-        // \_| |_/\___|\__,_|\__,_|\___|_|     \___/_| |_|_| \___/
-        //======================================================================
-        int docid = page.getWebURL().getDocid();
-        String url = page.getWebURL().getURL();
-        String domain = page.getWebURL().getDomain();
-        String path = page.getWebURL().getPath();
-        String subDomain = page.getWebURL().getSubDomain();
-        String parentUrl = page.getWebURL().getParentUrl();
-        String anchor = page.getWebURL().getAnchor();
-
-        //TODO print to indexer
-        String docUrl = docid + " " + url;
-
-        String crawlerHeaderFileName = FileSystem.HEADER_FILE_NAME + index;
-        //TODO create a new Header File
-
-        //TODO print to logger
-        String information = String.format("DocId: %s%n"
-                                           + "Domain: %s Sub-Domain: %s Path: %s%n"
-                                           + "Parent Page:%s Anchor Text: %s",
-                                           docUrl, domain, subDomain, path, parentUrl, anchor);
-        System.out.println(information);
-
-        //======================================================================
-        //  _____             _             _     _   _                 _ _ _             
-        // /  __ \           | |           | |   | | | |               | | (_)            
-        // | /  \/ ___  _ __ | |_ ___ _ __ | |_  | |_| | __ _ _ __   __| | |_ _ __   __ _ 
-        // | |    / _ \| '_ \| __/ _ \ '_ \| __| |  _  |/ _` | '_ \ / _` | | | '_ \ / _` |
-        // | \__/\ (_) | | | | ||  __/ | | | |_  | | | | (_| | | | | (_| | | | | | | (_| |
-        //  \____/\___/|_| |_|\__\___|_| |_|\__| \_| |_/\__,_|_| |_|\__,_|_|_|_| |_|\__, |
-        //                                                                          |___/
-        //======================================================================
-        String documentIdFileName = "" + docid;
-
-        if (page.getParseData() instanceof HtmlParseData)
-        {
-            HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
-            String title = htmlParseData.getTitle();
-            String text = htmlParseData.getText();
-            String html = htmlParseData.getHtml();
-            Set<WebURL> links = htmlParseData.getOutgoingUrls();
-
-            String moreInformation = String.format("Text Length: %d, Html Length: %d # Outgoing Links: %d",
-                                                   text.length(), html.length(), links.size());
-            System.out.println(moreInformation);  //put this in crawlerHeaderFileName
-
-            //TODO print to document
-            // System.out.println(Strings.getBasicHeader("Title"));
-            // System.out.println(title);
-            // System.out.println(Strings.getBasicHeader("Text"));
-            // System.out.println(text);
-            //System.out.println(Strings.SPACER);
-            // System.out.println(Strings.getBasicHeader("HTML"));
-            // System.out.println(html);
-            //System.out.println(Strings.SPACER);
-            // System.out.println(Strings.getBasicHeader("Meta Tags"));
-            // System.out.println(metatags);
-            //System.out.println(Strings.SPACER);
-            // System.out.println(Strings.getBasicHeader("Links"));
-            // System.out.println(links);
-            //System.out.println(Strings.SPACER);
-        }
-        else if (page.getParseData() instanceof TextParseData)
-        {
-            TextParseData htmlParseData = (TextParseData) page.getParseData();
-            String text = htmlParseData.getTextContent();
-            Set<WebURL> links = htmlParseData.getOutgoingUrls();
-
-            String moreInformation = String.format("Text Length: %d, # Outgoing Links: %d",
-                                                   text.length(), links.size());
-            System.out.println(moreInformation);
-
-            //TODO print to document
-            // System.out.println(Strings.getBasicHeader("Text"));
-            //System.out.println(text);
-            //System.out.println(Strings.SPACER);
-            // System.out.println(Strings.getBasicHeader("Links"));
-            // System.out.println(links);
-            //System.out.println(Strings.SPACER);
-        }
-        else
-        {
-            //TODO how to get other text?
-        }
-
-        //======================================================================
-        // ______                                       _   _                _               
-        // | ___ \                                     | | | |              | |              
-        // | |_/ /___  ___ _ __   ___  _ __  ___  ___  | |_| | ___  __ _  __| | ___ _ __ ___ 
-        // |    // _ \/ __| '_ \ / _ \| '_ \/ __|/ _ \ |  _  |/ _ \/ _` |/ _` |/ _ \ '__/ __|
-        // | |\ \  __/\__ \ |_) | (_) | | | \__ \  __/ | | | |  __/ (_| | (_| |  __/ |  \__ \
-        // \_| \_\___||___/ .__/ \___/|_| |_|___/\___| \_| |_/\___|\__,_|\__,_|\___|_|  |___/                                                            
-        //                |_|    
-        //======================================================================
-        //write to crawlerHeaderFileName
-        Header[] responseHeaders = page.getFetchResponseHeaders();
-
-        if (responseHeaders != null)
-        {
-            StringBuilder response = new StringBuilder();
-            response.append("Response headers:");
-            for (Header header : responseHeaders)
-            {
-                response.append("\n: ").append(header.getName()).append(header.getValue());
-            }
-            //System.out.println(response);
-        }
-
-        //=================================
-        //  _____          _ 
-        // |  ___|        | |
-        // | |__ _ __   __| |
-        // |  __| '_ \ / _` |
-        // | |__| | | | (_| |
-        // \____/_| |_|\__,_|
-        //================================
-        System.out.println(Strings.SPACER);
-    }
 }

@@ -21,11 +21,10 @@ public class IcsCrawlController
 
         config.setCrawlStorageFolder(FileSystem.CRAWLER_DIRECTORY);
 
-        config.setPolitenessDelay(1000);    //TODO
+        config.setPolitenessDelay(800);    //TODO
 
         config.setMaxDepthOfCrawling(-1);
 
-        //TODO set to -1
         config.setMaxPagesToFetch(-1);
 
         // Don't grab binary stuff as content
@@ -57,8 +56,8 @@ public class IcsCrawlController
 
         // Add Seed URL
         controller.addSeed(UrlStartingSeed.ICS_DOMAIN);
-        controller.addSeed(UrlStartingSeed.TRAP_TESTING);
-        controller.addSeed(UrlStartingSeed.STARTING_DOMAINS);
+      //  controller.addSeed(UrlStartingSeed.STARTING_DOMAINS);
+        //controller.addSeed(UrlStartingSeed.TRAP_TESTING);
 
         // Start blocking Crawl
         controller.start(IcsCrawler.class, numberOfCrawlers);

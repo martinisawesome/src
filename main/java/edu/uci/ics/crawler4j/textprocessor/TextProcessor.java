@@ -1,5 +1,6 @@
 package edu.uci.ics.crawler4j.textprocessor;
 
+import edu.uci.ics.crawler4j.def.StopWords;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -45,8 +46,7 @@ public class TextProcessor<E>
             for (String string : strings)
             {
                 //TODO ignore stop words!!!
-                
-                
+
                 // Handle all empty strings
                 token = string.trim();
                 if (!token.isEmpty())
@@ -79,6 +79,17 @@ public class TextProcessor<E>
         System.out.println(sb.toString());
     }
 
+    public static void removeStopWords(List<String> tokens)
+    {
+        for (String word : StopWords.WORDS)
+        {
+            while (tokens.remove(word))
+            {
+                //keep removing the same word
+            }
+        }
+    }
+
     //  _    _               _  ______                                    _           
     // | |  | |             | | |  ___|                                  (_)          
     // | |  | | ___  _ __ __| | | |_ _ __ ___  __ _ _   _  ___ _ __   ___ _  ___  ___ 
@@ -88,7 +99,7 @@ public class TextProcessor<E>
     //                                           |_|  
     public static List<FreqPair<String>> computeWordFrequencies(Map<String, Integer> map, List<FreqPair<String>> pairList, List<String> tokenList)
     {
-        
+
         for (String token : tokenList)
         {
             // Check if token already exists
@@ -111,7 +122,7 @@ public class TextProcessor<E>
         return pairList;
     }
 
-    public static List<FreqPair<NGram>> computeNGramFrequencies(Map<NGram, Integer> map , List<FreqPair<NGram>> pairList, List<String> tokenList, int n)
+    public static List<FreqPair<NGram>> computeNGramFrequencies(Map<NGram, Integer> map, List<FreqPair<NGram>> pairList, List<String> tokenList, int n)
     {
         String[] pos = new String[n];
 

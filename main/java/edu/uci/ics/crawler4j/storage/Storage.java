@@ -2,7 +2,10 @@ package edu.uci.ics.crawler4j.storage;
 
 import edu.uci.ics.crawler4j.textprocessor.FreqPair;
 import edu.uci.ics.crawler4j.textprocessor.NGram;
+import edu.uci.ics.crawler4j.textprocessor.TextProcessor;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,13 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Used to store everything that is found by the web crawler! Basic indexer just 
+ * Used to store everything that is found by the web crawler! Basic indexer just
  * to initial rip some data from raw documents.
  */
 public final class Storage
 {
     private final LinkedList<String> pages;
-    private final LinkedList<String> subdomains;
+    private final HashMap<String, Integer> subdomains;
     private final List<FreqPair<String>> wordCount;
     private final Map<String, Integer> wordCountMap;
 
@@ -36,11 +39,11 @@ public final class Storage
         threeGramCount = new LinkedList<>();
         wordCountMap = new HashMap<>();
         threeGramMap = new HashMap<>();
-        
+
         //Process everything
         processAllPages();
     }
-    
+
     public void processAllPages()
     {
         for (File f : FileSystem.getAllContentTextFiles())
@@ -51,32 +54,37 @@ public final class Storage
 
     public void addPage(File page)
     {
-        
-        if (!constainsPage(page.getName()))
+        try
         {
-            
-            //TODO, hash content pages for duplicates?
-            
-            //==================================================================
-            //Compute Longest Page
-
-            // If  page length > longestPageLength
+            if (!constainsPage(page.getName()))
             {
-                //longestPageLength = page length
-                longestPage = page.getName();
-                longestPageLength++;    // TODO remove this
+                List<String> tokenList = TextProcessor.tokenizeFile(page);
+
+                //==================================================================
+                //Compute Longest Page
+                if (tokenList.size() > longestPageLength)
+                {
+                    longestPage = page.getName();
+                    longestPageLength = tokenList.size();
+                }
+                
+                //Ignore stop words for Word counts and stop words
+                TextProcessor.removeStopWords(tokenList);
+
+                //==================================================================
+               TextProcessor.computeWordFrequencies(wordCountMap, wordCount, tokenList);
+               TextProcessor.computeNGramFrequencies(threeGramMap, threeGramCount, tokenList, 3);
+                pages.add(page.getName());
             }
-
-            //==================================================================
-            //Compute Word Freq             //TODO ignore stop words!!!
-            //TODO  computeWordFrequencies(wordCountMap, wordCount, List<String> tokenList) on this page
-
-            //TODO    computeNGramFrequencies(twoGrmaMap, nGramCount, List<String> tokenList, 3)
-            pages.add(page.getName());
+            else
+            {
+                System.out.println("Duplicate Page: " + page.getName());
+            }
         }
-        else
+        catch (IOException e)
         {
-            System.out.println("Duplicate Page: " + page.getName());
+            System.out.println("Failed to open and tokenize a file: " + page.getName());
+            e.printStackTrace();
         }
     }
 
@@ -106,24 +114,43 @@ public final class Storage
     }
 
     public void writeSubDomainsToText()
+    {try
     {
-        //TODO
-        //Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. 
-        //The file should be called Subdomains.txt, and its content should be lines containing: URL, number of unique pages detected
+        LinkedList<String> domains = new LinkedList<>(subdomains.keySet());
+        Collections.sort(domains);
+        FileWriter wr = new FileWriter(FileSystem.CRAWLER_DIRECTORY + "Subdomains.txt", false);
+        StringBuilder sb = new StringBuilder();
+        
+        for (String domain : domains)
+        {
+            sb.append(domain);
+            sb.append(", ");
+            sb.append(subdomains.get(domain));
+            sb.append("\n");
+        }
+        
+        wr.write(sb.toString());
+        wr.close();
+    }
+    catch (IOException e)
+    {
+        System.err.println("Failed to retrieve subdomain text!!!");
+        e.printStackTrace();
+    }
     }
 
     public List<FreqPair<String>> getWordCount()
     {
         //find the 500 most common words in this domain? 
         Collections.sort(wordCount);
-        return wordCount;
+        return wordCount.subList(0, 500);
     }
 
-    public List<FreqPair<NGram>> get2GramCount()
+    public List<FreqPair<NGram>> get4GramCount()
     {
         //find  the 20 most common 3-grams
         Collections.sort(threeGramCount);
-        return threeGramCount;
+        return threeGramCount.subList(0, 20);
     }
 
 }
