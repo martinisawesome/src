@@ -21,7 +21,6 @@ import java.io.Serializable;
 import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 import edu.uci.ics.crawler4j.def.Strings;
-import edu.uci.ics.crawler4j.storage.FileSystem;
 
 /**
  * @author Yasser Ganjisaffar

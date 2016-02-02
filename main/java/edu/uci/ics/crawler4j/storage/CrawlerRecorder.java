@@ -9,20 +9,20 @@ public class CrawlerRecorder
     private final int index;
 
     // Path Writing
-    private final FileWriter pathing;
+    private FileWriter pathing;
     private StringBuilder pather;
     private int pathSize;
 
     // Header Writing
-    private final FileWriter heading;
+    private FileWriter heading;
     private StringBuilder header;
     private int headSize;
 
     public CrawlerRecorder(int index) throws IOException
     {
-        
+
         this.index = 0;
-        
+
         this.pathSize = 0;
         File path = new File(FileSystem.CRAWLER_DIRECTORY + FileSystem.CRAWLER_PATHING_NAME + index);
         pathing = new FileWriter(path, false);
@@ -36,6 +36,22 @@ public class CrawlerRecorder
 
     }
 
+    private void rePathFile() throws IOException
+    {
+        pathing.close();
+        File path = new File(FileSystem.CRAWLER_DIRECTORY + FileSystem.CRAWLER_PATHING_NAME + index);
+        pathing = new FileWriter(path, true);
+     pather    = new StringBuilder();
+    }
+
+    private void reHeadFile() throws IOException
+    {
+        heading.close();
+        File path = new File(FileSystem.CRAWLER_DIRECTORY + FileSystem.HEADER_FILE_NAME + index);
+        heading = new FileWriter(path, true);
+      header   = new StringBuilder();
+    }
+
     public void writePath(String message)
     {
         try
@@ -46,7 +62,7 @@ public class CrawlerRecorder
             {
                 pathSize = 0;
                 pathing.write(pather.toString());
-                pather = new StringBuilder();
+                rePathFile();
             }
         }
         catch (IOException e)
@@ -66,7 +82,7 @@ public class CrawlerRecorder
             {
                 headSize = 0;
                 heading.write(header.toString());
-                header = new StringBuilder();
+                reHeadFile();
             }
         }
         catch (IOException e)

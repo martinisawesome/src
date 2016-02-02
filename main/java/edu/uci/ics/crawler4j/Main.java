@@ -11,6 +11,8 @@ public class Main
         long startTime = System.nanoTime();
 
         Storage storage = new Storage();
+        int pageCount = storage.processTokenPages();
+        storage.computeFrequencies();
 
         //  _____                    _     _____           _        _   _               
         // |_   _|                  | |   /  __ \         | |      | | | |              
@@ -29,7 +31,7 @@ public class Main
                 String.format("Time to completion: %.03fms", time));
 
         //2. How many unique pages did you find in the entire domain? (Uniqueness is established by the URL)
-        System.out.println(String.format("Unique Pages: %d", storage.getPageCount()));
+        System.out.println(String.format("Unique Pages: %d", pageCount));
 
         //3. How many subdomains did you find? 
         //Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. 
@@ -45,7 +47,7 @@ public class Main
 
         //6. What are the 20 most common 3-grams? (again ignore English stop words) 
         //A 2-gram, in this case, is a sequence of 2 words that aren’t stop words and that haven’t had a stop word in between them. Submit the list of 20 2-grams ordered by frequency.
-        System.out.println(String.format("20 Common N-Grams: %s", printf(storage.get4GramCount())));
+        System.out.println(String.format("20 Common N-Grams: %s", printf(storage.get3GramCount())));
     }
 
     public static <E> String printf(List<E> tokenList)

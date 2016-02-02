@@ -21,7 +21,7 @@ public class IcsCrawlController
 
         config.setCrawlStorageFolder(FileSystem.CRAWLER_DIRECTORY);
 
-        config.setPolitenessDelay(800);    //TODO
+        config.setPolitenessDelay(750);
 
         config.setMaxDepthOfCrawling(-1);
 
@@ -42,9 +42,11 @@ public class IcsCrawlController
         config.setSocketTimeout(60 * TimeConstants.SEC_IN_MS);
 
         //set AuthInfo?
-        //set proxy?
-        //setOnlineTldListUpdate?
         config.setResumableCrawling(false);
+        
+//        config.setProxyUsername("mjmao");
+//        config.setProxyHost("mjmao@openlab.ics.uci.edu");
+//        config.setProxyPort(8080);
 
         /*
          * Instantiate the controller for this crawl.
@@ -56,8 +58,8 @@ public class IcsCrawlController
 
         // Add Seed URL
         controller.addSeed(UrlStartingSeed.ICS_DOMAIN);
-      //  controller.addSeed(UrlStartingSeed.STARTING_DOMAINS);
-        //controller.addSeed(UrlStartingSeed.TRAP_TESTING);
+    //    controller.addSeed(UrlStartingSeed.STARTING_DOMAINS);
+    //   controller.addSeed(UrlStartingSeed.TRAP_TESTING);
 
         // Start blocking Crawl
         controller.start(IcsCrawler.class, numberOfCrawlers);

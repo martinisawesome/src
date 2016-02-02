@@ -7,6 +7,7 @@ import edu.uci.ics.crawler4j.def.Strings;
 import edu.uci.ics.crawler4j.parser.HtmlParseData;
 import edu.uci.ics.crawler4j.parser.TextParseData;
 import edu.uci.ics.crawler4j.storage.CrawlerRecorder;
+import edu.uci.ics.crawler4j.storage.FileSystem;
 import edu.uci.ics.crawler4j.url.WebURL;
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,25 +31,25 @@ public class IcsCrawler extends WebCrawler
 
     @Override
     public void init(int id, CrawlController crawlController)
-    {try
     {
-        super.init(id, crawlController);
-        this.index = CURRENT_INDEX++;
-        recorder = new CrawlerRecorder(index);
-             }
+        try
+        {
+            super.init(id, crawlController);
+            this.index = CURRENT_INDEX++;
+            recorder = new CrawlerRecorder(index);
+        }
         catch (IOException e)
         {
             System.err.println("Failed to create recorder for crawler: " + index);
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public void onBeforeExit()
     {
         recorder.close();
     }
-
 
     @Override
     public boolean shouldVisit(Page referringPage, WebURL url)
@@ -77,10 +78,16 @@ public class IcsCrawler extends WebCrawler
             return false;
         }
 
-        // TODO remove this!!!
-//        if (!href.contains("calendar") && !href.contains("flamingo") && !href.contains("fano") && !href.contains("archive"))
+        // this URL is giving me the Bad URL cookie thing, so skip it
+        if (url.getPath().contains("/LUCICodeRepository/nomaticIM"))
+        {
+            recorder.writePath("  Avoiding Cookie place, Skipping URL: " + url);
+            System.out.println("Avoiding Cookie place, Skipping URL: " + url);
+            return false;
+        }
+//        if (url.getSubDomain().contains("djp3-pc2"))
 //        {
-//            recorder.writePath("  Not a calendar, Skipping URL: " + url);
+//            recorder.writePath("  Avoiding bad connection subdomain, Skipping URL: " + url);
 //            return false;
 //        }
 
@@ -147,14 +154,16 @@ public class IcsCrawler extends WebCrawler
         String subDomain = page.getWebURL().getSubDomain();
         String parentUrl = page.getWebURL().getParentUrl();
         String anchor = page.getWebURL().getAnchor();
+        String language = page.getLanguage();
 
         String docUrl = docid + " " + url;
 
         recorder.writeHead(String.format("DocId: %s%n"
-                                           + "Domain: %s Sub-Domain: %s Path: %s%n"
-                                           + "Parent Page:%s Anchor Text: %s",
-                                           docUrl, domain, subDomain, path, parentUrl, anchor));
-
+                                         + "Domain: %s Sub-Domain: %s Path: %s%n"
+                                         + "Language: %s%n"
+                                         + "Parent Page:%s Anchor Text: %s",
+                                         docUrl, domain, subDomain, path, language, parentUrl, anchor));
+        
         //======================================================================
         //  _____             _             _     _   _                 _ _ _             
         // /  __ \           | |           | |   | | | |               | | (_)            
@@ -178,9 +187,10 @@ public class IcsCrawler extends WebCrawler
                                                    text.length(), html.length(), links.size());
             recorder.writeHead(moreInformation);  //put this in crawlerHeaderFileName
 
+            textBlob.append(page.getWebURL()).append("\n");
             textBlob.append(Strings.getBasicHeader("Title")).append("\n");
             textBlob.append(title).append("\n");
-            textBlob.append(Strings.getBasicHeader("Text")).append("\n");
+            textBlob.append(Strings.getBasicHeader(FileSystem.TEXT)).append("\n");
             textBlob.append(text).append("\n");
             textBlob.append(Strings.SPACER).append("\n");
             textBlob.append(Strings.getBasicHeader("HTML")).append("\n");
@@ -193,6 +203,8 @@ public class IcsCrawler extends WebCrawler
             textBlob.append(links).append("\n");
             textBlob.append(Strings.SPACER).append("\n");
             recorder.writeContent(docid, textBlob.toString());
+            
+            //TODO if the link is not in english, remove all outgoing links from this page
         }
         else if (page.getParseData() instanceof TextParseData)
         {
@@ -204,7 +216,8 @@ public class IcsCrawler extends WebCrawler
                                                    text.length(), links.size());
             recorder.writeHead(moreInformation);
 
-            textBlob.append(Strings.getBasicHeader("Text")).append("\n");
+            textBlob.append(page.getWebURL()).append("\n");
+            textBlob.append(Strings.getBasicHeader(FileSystem.TEXT)).append("\n");
             textBlob.append(text).append("\n");
             textBlob.append(Strings.SPACER).append("\n");
             textBlob.append(Strings.getBasicHeader("Links")).append("\n");
@@ -250,8 +263,7 @@ public class IcsCrawler extends WebCrawler
         //================================
         recorder.writeHead(Strings.SPACER);
     }
-    
-    
+
     /**
      * Don't visit URL's that are very similar, just remove numbers
      *
@@ -270,9 +282,27 @@ public class IcsCrawler extends WebCrawler
         StringBuilder sb = new StringBuilder();
         sb.append(url.getSubDomain());
         String[] path = urlPath.split("/");
+        HashMap<String, Integer> pathCounter = new HashMap<>();
         for (int i = 0; i < path.length - 1; i++)
         {
-            sb.append(path[i]).append('/');
+            String pathPart = path[i];
+            
+            // Kill URLs that have repeated pathing
+            Integer count = pathCounter.get(pathPart);
+            if (count == null)
+            {
+                pathCounter.put(pathPart, 1);
+            }
+            else if (count > 2)
+            {
+                return true;
+            }
+            else
+            {
+                pathCounter.put(pathPart, count+1);
+            }
+            
+            sb.append(pathPart).append('/');
         }
 
         String alphaString = path[path.length - 1].replaceAll("[0-9]", "");

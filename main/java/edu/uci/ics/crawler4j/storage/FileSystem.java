@@ -7,7 +7,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -15,7 +17,8 @@ import java.util.regex.Pattern;
  */
 public class FileSystem
 {
-
+    public static final String TOKEN = "Token";
+    public static final String TEXT = "Text";
     public static final String CRAWLER_DIRECTORY = "E:\\Crawl\\";
     public static final String DOCUMENT_MAP_NAME = "Doc_Map";
     public static final String HEADER_FILE_NAME = "Crawler_Header";
@@ -43,6 +46,80 @@ public class FileSystem
     public static void clearEverything()
     {
         deleteFolder(new File(CRAWLER_DIRECTORY));
+    }
+
+    public static void clearTextData()
+    {
+        File[] files = new File(CRAWLER_DIRECTORY).listFiles();
+        if (files != null)
+        {
+            for (File f : files)
+            {
+                if (f.getName().contains(TEXT))
+                {
+
+                    f.delete();
+                }
+            }
+        }
+    }
+
+    @Deprecated
+    public static boolean findDuplicateFile(List<String> tokenList)
+    {
+        File[] files = new File(CRAWLER_DIRECTORY).listFiles();
+        if (files != null)
+        {
+            for (File f : files)
+            {
+                if (f.getName().contains(TOKEN))
+                {
+                    int count = 0;
+                    int index = 0;
+
+                    try
+                    {
+                        FileReader fr = new FileReader(f);
+                        BufferedReader br = new BufferedReader(fr);
+                        String curr;
+
+                        Iterator it = tokenList.iterator();
+
+                        //Scan for the Sub-Domains text line
+                        while ((curr = br.readLine()) != null && it.hasNext())
+                        {
+                            if (curr.equals(it.next()))
+                            {
+                                count++;
+                            }
+
+                            index++;
+
+                            //not too similar, just end this
+                            if (index == 1000)
+                            {
+                                break;
+                            }
+                        }
+
+                        //over 90% similarity!
+                        if (count * 100 / index > 95)
+                        {
+                            return true;
+                        }
+
+                        fr.close();
+                    }
+                    catch (IOException e)
+                    {
+                        System.out.println("Failed to read file: " + f.getName());
+                    }
+
+                }
+            }
+        }
+
+        return false;
     }
 
     public static void clearFrontierDirectory()
@@ -75,8 +152,7 @@ public class FileSystem
     public static LinkedList<File> getAllContentTextFiles()
     {
         LinkedList<Integer> hashedContents = new LinkedList<>();
-        LinkedList<String> titles = new LinkedList<>();
-        Pattern numberic = Pattern.compile("[^0-9]");
+        Pattern numberic = Pattern.compile("[0-9]*$");
 
         LinkedList<File> domains = new LinkedList<>();
         File directory = new File(CRAWLER_DIRECTORY);
@@ -89,9 +165,36 @@ public class FileSystem
                 {
 
                 }
-                else if (!numberic.matcher(f.getName()).matches())
+                else if (numberic.matcher(f.getName()).matches() && !f.getName().contains("Crawler"))
                 {
-                    domains.add(parseContentFileForText(hashedContents, titles, f));
+                    File file = parseContentFileForText(hashedContents, f);
+                    if (file != null)
+                    {
+                        domains.add(file);
+                    }
+                }
+            }
+        }
+        return domains;
+    }
+
+    public static LinkedList<File> getAllTokenTextFiles()
+    {
+
+        LinkedList<File> domains = new LinkedList<>();
+        File directory = new File(CRAWLER_DIRECTORY);
+        File[] files = directory.listFiles();
+        if (files != null)
+        {
+            for (File f : files)
+            {
+                if (f.isDirectory())
+                {
+
+                }
+                else if (f.getName().contains(TOKEN))
+                {
+                    domains.add(f);
                 }
             }
         }
@@ -106,14 +209,15 @@ public class FileSystem
      * @param file
      * @return
      */
-    private static File parseContentFileForText(LinkedList<Integer> hashedContents, LinkedList<String> titles, File file)
+    private static File parseContentFileForText(LinkedList<Integer> hashedContents, File file)
     {
-        File content = new File("Text" + file.getName());
-
+        File contentFile = new File(CRAWLER_DIRECTORY + TEXT + file.getName());
+        boolean badFile = false;
         try
         {
+
             StringBuilder sb = new StringBuilder();
-            FileWriter wr = new FileWriter(content, false);
+            FileWriter wr = new FileWriter(contentFile, false);
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             String curr;
@@ -127,15 +231,11 @@ public class FileSystem
                     if ("#Title#".equals(curr))
                     {
                         //Skip Title of the text
-                        String title = br.readLine();
-                        if (titles.contains(title))
+                        while (!"#Text#".equals(curr = br.readLine()))
                         {
-                            System.out.println("Dupe Title: " + title);
+                            // keep skipping title
                         }
-                        else
-                        {
-                            titles.add(title);
-                        }
+                        found = true;
                     }
                     else if ("#Text#".equals(curr))
                     {
@@ -144,16 +244,17 @@ public class FileSystem
                     }
                     else
                     {
+                        System.out.println(file.getName() + " string: " + curr);
                         throw new IOException("Content File does not start with correct header!");
                     }
-                }
+                }   //end if found
 
                 //Do not include HTML markup
                 if (curr.equals(Strings.SPACER))
                 {
                     break;
                 }
-                else if (found && !curr.isEmpty())
+                else if (found && !curr.isEmpty() && !curr.contains("#Text#"))
                 {
                     sb.append(curr);
                     sb.append(' ');
@@ -165,10 +266,12 @@ public class FileSystem
             int hash = strings.hashCode();
             if (hashedContents.contains(hash))
             {
-                System.out.println("Duplicate hash for file: " + file.getName());
+                System.out.println("Duplicate hash for file: " + file.getName() + " with hash: " + hash);
+                badFile = true;
             }
             else
             {
+                System.out.println("  Hasing file: " + file.getName() + " with hash " + hash);
                 hashedContents.add(hash);
             }
 
@@ -182,7 +285,11 @@ public class FileSystem
             throw new RuntimeException(ex);
         }
 
-        return content;
+        if (badFile)
+        {
+            return null;
+        }
+        return contentFile;
     }
 
     public static HashMap<String, Integer> findAllSubdomains()
@@ -215,7 +322,7 @@ public class FileSystem
                                 for (int i = 0; i + 1 < strings.length; i++)
                                 {
                                     String text = strings[i + 1];
-                                    if (strings[i].equals(Strings.SUBDOMAIN_TEXT)
+                                    if (strings[i].equals(Strings.SUBDOMAIN_TEXT + ':')
                                         && !text.equals(Strings.EMPTY_FIELD)
                                         && !"www".equals(text))
                                     {
