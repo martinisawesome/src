@@ -77,6 +77,12 @@ public class IcsCrawler extends WebCrawler
             recorder.writePath("  Bad domain, not ics.uci.edu, Skipping URL: " + url);
             return false;
         }
+        
+        if (url.getSubDomain().equals("wics") && url.getPath().contains("events/category/"))
+        {
+             recorder.writePath("  Avoiding Calendar at wics, Skipping URL: " + url);
+            return false;
+        }
 
         // this URL is giving me the Bad URL cookie thing, so skip it
         if (url.getPath().contains("/LUCICodeRepository/nomaticIM"))

@@ -222,7 +222,6 @@ public class CrawlConfig
         if (!resumableCrawling)
         {
             FileSystem.clearFrontierDirectory();
-            FileSystem.clearEverything();
         }
         this.resumableCrawling = resumableCrawling;
     }

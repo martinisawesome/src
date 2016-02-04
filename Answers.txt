@@ -1,3 +1,11 @@
-Unique Pages: 51094
-Subdomain Count: 19
-Longest Page: Text12520
+Your submission should be one single zip file submitted to EEE.
+ This file should contain: (a) your source code; 
+ (b) your answers to ALL the questions in a file called “answers” (.txt, .doc or .pdf). 
+ If there is anything else you wish to communicate to the Reader, such as implementation assumptions made, this should be placed into an additional README.txt file within the zip file.
+
+Time to crawl: 13 hrs, 15 min
+Unique Pages: 38898
+Subdomain Count: 96
+Longest Page: http://mondego.ics.uci.edu/datasets/maven-contents.txt
+count
+three count

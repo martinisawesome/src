@@ -1,11 +1,12 @@
 package edu.uci.ics.crawler4j.textprocessor;
 
 import edu.uci.ics.crawler4j.def.StopWords;
+import edu.uci.ics.crawler4j.storage.FileSystem;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +16,24 @@ import java.util.Map;
 
 public class TextProcessor<E>
 {
+
+    private final List<FreqPair<String>> wordCount;
+    private final Map<String, Integer> wordCountMap;
+
+    private final List<FreqPair<String>> NGramCount;
+    private final Map<String, Integer> NGramMap;
+    private int freqFileCount;
+    private int threeGCount;
+
+    public TextProcessor()
+    {
+        wordCount = new LinkedList<>();
+        NGramCount = new LinkedList<>();
+        wordCountMap = new HashMap<>();
+        NGramMap = new HashMap<>();
+        freqFileCount = 0;
+        threeGCount = 0;
+    }
 
     // =========================================================================
     //  _   _ _   _ _ _ _   _           
@@ -97,38 +116,42 @@ public class TextProcessor<E>
     // \  /\  / (_) | | | (_| | | | | | |  __/ (_| | |_| |  __/ | | | (__| |  __/\__ \
     //  \/  \/ \___/|_|  \__,_| \_| |_|  \___|\__, |\__,_|\___|_| |_|\___|_|\___||___/
     //                                           |_|  
-    public static List<FreqPair<String>> computeWordFrequencies(Map<String, Integer> map, List<FreqPair<String>> pairList, List<String> tokenList)
+    public void computeWordFrequencies(int docId, List<String> tokenList) throws IOException
     {
 
         for (String token : tokenList)
         {
             // Check if token already exists
-            Integer index = map.get(token);
+            Integer index = wordCountMap.get(token);
 
             // Token already added
             if (index != null)
             {
-                pairList.get(index).incCount();
+                wordCount.get(index).incCount();
             }
             // Otherwise, is a new token
             else
             {
-                index = pairList.size();
-                pairList.add(new FreqPair<>(token));
-                map.put(token, index);
+                index = wordCount.size();
+                wordCount.add(new FreqPair<>(token));
+                wordCountMap.put(token, index);
+            }
+
+            if (wordCount.size() > 100000)
+            {
+                writeToFile();
             }
         }
 
-        return pairList;
     }
 
-    public static List<FreqPair<NGram>> computeNGramFrequencies(Map<NGram, Integer> map, List<FreqPair<NGram>> pairList, List<String> tokenList, int n)
+    public void computeNGramFrequencies(int docId, List<String> tokenList, int n) throws IOException
     {
         String[] pos = new String[n];
 
         if (tokenList.size() < n)
         {
-            return pairList;
+            return;
         }
 
         // Initialize the first three gram
@@ -136,13 +159,14 @@ public class TextProcessor<E>
         {
             pos[i] = tokenList.get(i);
         }
-        NGram gram = new NGram(pos);
-        pairList.add(new FreqPair<>(gram));
-        map.put(gram, 0);   //goes to index 0, starting
+        
+        String string = Arrays.toString(pos);
+        NGramCount.add(new FreqPair<>(string));
+        NGramMap.put(string, 0);   //goes to index 0, starting
 
         if (tokenList.size() == n)
         {
-            return pairList;
+            return;
         }
 
         for (int i = n; i < tokenList.size(); i++)
@@ -154,25 +178,77 @@ public class TextProcessor<E>
                 pos[j] = pos[j + 1];
             }
             pos[n - 1] = token;
-            gram = new NGram(Arrays.copyOf(pos, n));
+            String gram = Arrays.toString(pos);
 
             // Check if N-gram already exists
-            Integer index = map.get(gram);
+            Integer index = NGramMap.get(gram);
 
             // 3-gram already added
             if (index != null)
             {
-                pairList.get(index).incCount();
+                NGramCount.get(index).incCount();
             }
             // Otherwise, is a new 3-gram
             else
             {
-                index = pairList.size();
-                pairList.add(new FreqPair<>(gram));
-                map.put(gram, index);
+                index = NGramCount.size();
+                NGramCount.add(new FreqPair<>(gram));
+                NGramMap.put(gram, index);
+            }
+
+            if (NGramCount.size() > 70000)
+            {
+                writeToFile3();
             }
         }
-
-        return pairList;
     }
+
+    public void flush() throws IOException
+    {
+        writeToFile();
+        writeToFile3();
+    }
+
+    /**
+     * Clears the counts and writes to file
+     *
+     * @param wordCountMap
+     * @param wordCount
+     * @throws IOException
+     */
+    private void writeToFile() throws IOException
+    {
+        Collections.sort(wordCount);
+        FileWriter wr = new FileWriter(FileSystem.CRAWLER_DIRECTORY + FileSystem.FREQ_FILE + (freqFileCount++), false);
+        StringBuilder sb = new StringBuilder();
+        for (FreqPair f : wordCount)
+        {
+            sb.append(f.toString());
+            sb.append("\n");
+        }
+        wr.write(sb.toString());
+        wr.close();
+
+        wordCount.clear();
+        wordCountMap.clear();
+    }
+
+    private void writeToFile3() throws IOException
+    {
+        Collections.sort(NGramCount);
+
+        FileWriter wr = new FileWriter(FileSystem.CRAWLER_DIRECTORY + FileSystem.THREE_GRAM + (threeGCount++), false);
+        StringBuilder sb = new StringBuilder();
+        for (FreqPair f : NGramCount)
+        {
+            sb.append(f.toString());
+            sb.append("\n");
+        }
+        wr.write(sb.toString());
+        wr.close();
+
+        NGramCount.clear();
+        NGramMap.clear();
+    }
+
 }

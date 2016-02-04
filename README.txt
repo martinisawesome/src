@@ -1,0 +1,3 @@
+We were able to crawl over 60k pages, however we did not consider some of them to be unique. We hashed the contents of each file and duplicate hashes were not considered for our unique page count nor for unique pages per subdomain. We also did not allow duplicate pages to affect our frequency or three gram counts since we ignored these duplicate pages. Pages that were empty of english text were also ignored.
+
+We did not allow the crawler to follow paths or parameters. We also set some code to avoid traps, just as the calendar page on wics.

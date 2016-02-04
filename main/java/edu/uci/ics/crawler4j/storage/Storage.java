@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -22,11 +23,6 @@ import java.util.Map;
 public final class Storage
 {
     private final HashMap<String, Integer> subdomains;
-    private final List<FreqPair<String>> wordCount;
-    private final Map<String, Integer> wordCountMap;
-
-    private final List<FreqPair<NGram>> threeGramCount;
-    private final Map<NGram, Integer> threeGramMap;
 
     private int longestPageLength;
     private String longestPage;
@@ -36,12 +32,48 @@ public final class Storage
         longestPage = "";
         longestPageLength = 0;
 
-        subdomains = FileSystem.findAllSubdomains();
-        wordCount = new LinkedList<>();
-        threeGramCount = new LinkedList<>();
-        wordCountMap = new HashMap<>();
-        threeGramMap = new HashMap<>();
+        //subdomains = FileSystem.findAllSubdomains();
+        subdomains = new HashMap<>();
+    }
 
+    public void deleteAll()
+    {
+        try
+        {
+            LinkedList<File> deletes = new LinkedList<>();
+
+            File directory = new File(FileSystem.CRAWLER_DIRECTORY);
+            File[] files = directory.listFiles();
+            if (files != null)
+            {
+                for (File f : files)
+                {
+                    if (f.isDirectory())
+                    {
+                        continue;
+                    }
+                    FileReader fr = new FileReader(f);
+                    BufferedReader br = new BufferedReader(fr);
+                    String curr = br.readLine();
+
+                    if (curr.contains("asdfghjkl"))
+                    {
+                        deletes.add(f);
+                    }
+
+                    fr.close();
+                }
+            }
+
+            for (File f : deletes)
+            {
+                f.delete();
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public int processTokenPages()
@@ -49,7 +81,8 @@ public final class Storage
         // Clear all text data before making new
         FileSystem.clearTextData();
         LinkedList<String> pages = new LinkedList<>();
-        for (File page : FileSystem.getAllContentTextFiles())   //turns all files into text only
+        FileSystem fs = new FileSystem();
+        for (File page : fs.getAllContentTextFiles(subdomains))   //turns all files into text only
         {
 
             try
@@ -58,7 +91,7 @@ public final class Storage
                 {
                     continue;
                 }
-                
+
                 if (!pages.contains(page.getName()))
                 {
                     List<String> tokenList = TextProcessor.tokenizeFile(page);
@@ -77,7 +110,7 @@ public final class Storage
                     {
                         sb.append(s);
                         counter++;
-                        
+
                         if (counter % 100 == 0)
                         {
                             sb.append("\n");
@@ -86,7 +119,7 @@ public final class Storage
                         {
                             sb.append(" ");
                         }
-                        
+
                         if (counter > 5000)
                         {
                             counter = 0;
@@ -106,13 +139,11 @@ public final class Storage
                     }
 
                     //==================================================================
-                  //  TextProcessor.computeWordFrequencies(wordCountMap, wordCount, tokenList);
-                  //  TextProcessor.computeNGramFrequencies(threeGramMap, threeGramCount, tokenList, 3);
                     pages.add(page.getName());
                 }
                 else
                 {
-                    System.out.println("Duplicate Page: " + page.getName());
+                    //System.out.println("Duplicate Page: " + page.getName());
                 }
             }
             catch (IOException e)
@@ -122,12 +153,23 @@ public final class Storage
             }
         }
 
+        try
+        {
+            fs.getDocumentMap().writeToFile();
+        }
+        catch (IOException ex)
+        {
+            throw new RuntimeException(ex);
+        }
+
         return pages.size();
     }
 
     public void computeFrequencies()
     {
+        FileSystem.clearFreqData();
         LinkedList<File> files = FileSystem.getAllTokenTextFiles();
+        TextProcessor p = new TextProcessor();
         for (File f : files)
         {
             try
@@ -135,7 +177,7 @@ public final class Storage
                 FileReader fr = new FileReader(f);
                 BufferedReader br = new BufferedReader(fr);
                 String curr;
-                LinkedList<String> tokenList = new LinkedList<>();
+                ArrayList<String> tokenList = new ArrayList<>();
 
                 // fina all the words in this line
                 while ((curr = br.readLine()) != null)
@@ -164,9 +206,12 @@ public final class Storage
                 br.close();
                 fr.close();
 
-                System.out.println("Computing Frequencies on File: " + f.getName());
-                TextProcessor.computeWordFrequencies(wordCountMap, wordCount, tokenList);
-                TextProcessor.computeNGramFrequencies(threeGramMap, threeGramCount, tokenList, 3);
+                //System.out.println("  Computing Frequencies on File: " + f.getName());
+                
+                int id = Integer.parseInt(f.getName().replaceAll("[^0-9]", ""));
+
+                p.computeWordFrequencies(id, tokenList);
+                p.computeNGramFrequencies( id, tokenList, 3);
 
             }
             catch (IOException e)
@@ -174,6 +219,15 @@ public final class Storage
                 System.out.println("Cannot read file: " + f.getName());
                 e.printStackTrace();
             }
+        }
+
+        try
+        {
+            p.flush();
+        }
+        catch (IOException ex)
+        { System.out.println("Cannot flush processor");
+              ex.printStackTrace();
         }
     }
 
@@ -217,22 +271,23 @@ public final class Storage
     public List<FreqPair<String>> getWordCount()
     {
         //find the 500 most common words in this domain? 
-        Collections.sort(wordCount);
-        if (wordCount.size() > 500)
-        {
-            return wordCount.subList(0, 500);
-        }
-        else
-        {
-            return wordCount;
-        }
+        return null;
+//        if (wordCount.size() > 500)
+//        {
+//            return wordCount.subList(0, 500);
+//        }
+//        else
+//        {
+//            return wordCount;
+//        }
     }
 
     public List<FreqPair<NGram>> get3GramCount()
     {
         //find  the 20 most common 3-grams
-        Collections.sort(threeGramCount);
-        return threeGramCount.subList(0, 20);
+        return null;
+
+        //  return threeGramCount.subList(0, 20);
     }
 
 }

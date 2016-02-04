@@ -37,7 +37,9 @@ public class FreqPair<E> implements Comparable<FreqPair>
     public int compareTo(FreqPair p2)
     {
         // highest frequency first!
-        return   p2.getCount() - getCount();
+        //return   p2.getCount() - getCount();
+        
+           return   this.token.toString().compareTo(p2.token.toString());
     }
 
 }
