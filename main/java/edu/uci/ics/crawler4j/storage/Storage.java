@@ -1,8 +1,6 @@
 package edu.uci.ics.crawler4j.storage;
 
 import edu.uci.ics.crawler4j.def.StopWords;
-import edu.uci.ics.crawler4j.textprocessor.FreqPair;
-import edu.uci.ics.crawler4j.textprocessor.NGram;
 import edu.uci.ics.crawler4j.textprocessor.TextProcessor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,7 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Used to store everything that is found by the web crawler! Basic indexer just
@@ -165,6 +162,9 @@ public final class Storage
         return pages.size();
     }
 
+    /**
+     * Creates a bunch of small files that have the frequencies of some content files.
+     */
     public void computeFrequencies()
     {
         FileSystem.clearFreqData();
@@ -241,6 +241,9 @@ public final class Storage
         return subdomains.size();
     }
 
+    /**
+     * to be called after finding all sub-domains. Will just them to text file.
+     */
     public void writeSubDomainsToText()
     {
         try
@@ -266,28 +269,6 @@ public final class Storage
             System.err.println("Failed to retrieve subdomain text!!!");
             e.printStackTrace();
         }
-    }
-
-    public List<FreqPair<String>> getWordCount()
-    {
-        //find the 500 most common words in this domain? 
-        return null;
-//        if (wordCount.size() > 500)
-//        {
-//            return wordCount.subList(0, 500);
-//        }
-//        else
-//        {
-//            return wordCount;
-//        }
-    }
-
-    public List<FreqPair<NGram>> get3GramCount()
-    {
-        //find  the 20 most common 3-grams
-        return null;
-
-        //  return threeGramCount.subList(0, 20);
     }
 
 }

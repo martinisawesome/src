@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -145,7 +146,7 @@ public class TextProcessor<E>
 
     }
 
-    public void computeNGramFrequencies(int docId, List<String> tokenList, int n) throws IOException
+    public void computeNGramFrequencies(int docId, ArrayList<String> tokenList, int n) throws IOException
     {
         String[] pos = new String[n];
 
@@ -159,7 +160,7 @@ public class TextProcessor<E>
         {
             pos[i] = tokenList.get(i);
         }
-        
+
         String string = Arrays.toString(pos);
         NGramCount.add(new FreqPair<>(string));
         NGramMap.put(string, 0);   //goes to index 0, starting
@@ -210,7 +211,7 @@ public class TextProcessor<E>
     }
 
     /**
-     * Clears the counts and writes to file
+     * Writes the current frequency counts stored in memory to file.
      *
      * @param wordCountMap
      * @param wordCount
@@ -233,6 +234,11 @@ public class TextProcessor<E>
         wordCountMap.clear();
     }
 
+    /**
+     * Writes the current three-grams stored in memory to file
+     *
+     * @throws IOException
+     */
     private void writeToFile3() throws IOException
     {
         Collections.sort(NGramCount);
@@ -251,4 +257,57 @@ public class TextProcessor<E>
         NGramMap.clear();
     }
 
+    /**
+     * Counts up to limit, the most frequent words in the file. File does not have to be sorted.
+     *
+     * @param f
+     * @param limit
+     * @return
+     * @throws IOException
+     */
+    public static ArrayList<FreqPair<String>> countHighest(File f, int limit) throws IOException
+    {
+        FileReader fr = new FileReader(f);
+        BufferedReader br = new BufferedReader(fr);
+        String curr;
+        int least = 2;
+        ArrayList<FreqPair<String>> list = new ArrayList<>();
+
+        while ((curr = br.readLine()) != null)
+        {
+            String[] parm0 = curr.split(":");
+            int count0 = Integer.parseInt(parm0[1].trim());
+            if (count0 == 1)
+            {
+                continue;
+            }
+
+            String name = parm0[0];
+
+            if (list.size() < limit)
+            {
+                list.add(new FreqPair(name, count0));
+            }
+            else if (list.size() == limit && count0 > least)
+            {
+                Collections.sort(list);
+                least = list.get(limit - 1).getCount();
+
+                //if bigger than smallest index, need to remove smallest
+                if (count0 > least)
+                {
+                    list.remove(limit - 1);
+                    list.add(new FreqPair(name, count0));
+                }
+            }
+            else if (list.size() > limit)
+            {
+                throw new RuntimeException("List size > n!");
+            }
+        }
+
+        Collections.sort(list);
+        fr.close();
+        return list;
+    }
 }

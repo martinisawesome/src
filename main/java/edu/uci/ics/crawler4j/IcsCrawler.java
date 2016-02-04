@@ -22,6 +22,8 @@ public class IcsCrawler extends WebCrawler
     private static final boolean SKIP_QUERIES_AND_PARAMETERS = true;
     private static final HashMap<String, LinkedList<String>> PATHING_COMPARES = new HashMap<>();
     private static final LinkedList<String> SCHEDULED_URLS = new LinkedList<>();
+    
+    // We will ignore processing on these file extensions
     private static final Pattern BAD_EXTENSIONS = Pattern.compile(".*\\.(css|js|mp[2-4]|zip|gz|bmp|gif|mpeg"
                                                                   + "|xls|xlsx|jpg|png|pdf|ico|tiff|mid|names"
                                                                   + "|ppt|pptx|bin|7z|rar|dmg|iso|mov|jar|lzip|tar|tgz)$");
@@ -45,6 +47,9 @@ public class IcsCrawler extends WebCrawler
         }
     }
 
+    /**
+     * When crawler dies, make sure to close the file recorders
+     */
     @Override
     public void onBeforeExit()
     {
@@ -233,7 +238,7 @@ public class IcsCrawler extends WebCrawler
         }
         else
         {
-            //TODO how to get other text?
+            // nothing for other files?
         }
 
         //======================================================================
@@ -271,7 +276,8 @@ public class IcsCrawler extends WebCrawler
     }
 
     /**
-     * Don't visit URL's that are very similar, just remove numbers
+     * Don't visit URL's that are very similar, just remove numbers from path name
+     * and compare to existing URL's.
      *
      * @return
      */

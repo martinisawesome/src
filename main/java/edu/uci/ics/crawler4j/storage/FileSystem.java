@@ -83,64 +83,6 @@ public class FileSystem
         }
     }
 
-    @Deprecated
-    public static boolean findDuplicateFile(List<String> tokenList)
-    {
-        File[] files = new File(CRAWLER_DIRECTORY).listFiles();
-        if (files != null)
-        {
-            for (File f : files)
-            {
-                if (f.getName().contains(TOKEN))
-                {
-                    int count = 0;
-                    int index = 0;
-
-                    try
-                    {
-                        FileReader fr = new FileReader(f);
-                        BufferedReader br = new BufferedReader(fr);
-                        String curr;
-
-                        Iterator it = tokenList.iterator();
-
-                        //Scan for the Sub-Domains text line
-                        while ((curr = br.readLine()) != null && it.hasNext())
-                        {
-                            if (curr.equals(it.next()))
-                            {
-                                count++;
-                            }
-
-                            index++;
-
-                            //not too similar, just end this
-                            if (index == 1000)
-                            {
-                                break;
-                            }
-                        }
-
-                        //over 90% similarity!
-                        if (count * 100 / index > 95)
-                        {
-                            return true;
-                        }
-
-                        fr.close();
-                    }
-                    catch (IOException e)
-                    {
-                        System.out.println("Failed to read file: " + f.getName());
-                    }
-
-                }
-            }
-        }
-
-        return false;
-    }
-
     public static void clearFrontierDirectory()
     {
         String location = CRAWLER_DIRECTORY + "frontier";
@@ -379,10 +321,13 @@ public class FileSystem
         File exceptionalFile = (targetFiles.size() % 2 == 0)
                                ? null : targetFiles.get(targetFiles.size() - 1);
 
-        for (int i = 0; i < targetFiles.size(); i += 2)
+        for (int i = 0; i +1 < targetFiles.size(); i += 2)
         {
             File first = targetFiles.get(i);
-            File second = targetFiles.get(i);
+            File second = targetFiles.get(i+1);
+            
+        //     System.out.println(first + " Open");
+        //      System.out.println(second + " Open");
 
             FileReader fr = new FileReader(first);
             BufferedReader br0 = new BufferedReader(fr);
@@ -410,11 +355,13 @@ public class FileSystem
                     sb = new StringBuilder();
                 }
 
+                // both files are empty
                 if (!f0Has && !f1Has)
                 {
                     break;
                 }
 
+                // does file 0 need to update?
                 if (f0Has && curr0Clear)
                 {
                     curr0 = br0.readLine();
@@ -425,6 +372,7 @@ public class FileSystem
                     curr0Clear = false;
 
                 }
+                // does file 1 need to update?
                 if (f1Has && curr1Clear)
                 {
                     curr1 = br1.readLine();
@@ -435,6 +383,7 @@ public class FileSystem
                     curr1Clear = false;
                 }
 
+                // need to compare both files
                 if (f0Has && f1Has)
                 {
                     String[] parm0 = curr0.split(":");
@@ -485,6 +434,8 @@ public class FileSystem
             fr1.close();
             fw.close();
             fr.close();
+            
+        //    System.out.println("  Done!");
 
         }   // end of each file binary
 
@@ -497,6 +448,7 @@ public class FileSystem
             }
         }
 
+        // Continually merge until 1 file is left
         return binaryMergeAllFreq(nameHas, index);
     }
 
