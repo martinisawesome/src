@@ -246,7 +246,7 @@ public class FileSystem
             }
             else
             {
-                if (!sub.equals("wwww"))
+                if (!sub.equals("www"))
                 {
                     Integer i = subdomains.get(sub);
                     if (i == null)
@@ -387,11 +387,11 @@ public class FileSystem
                 if (f0Has && f1Has)
                 {
                     String[] parm0 = curr0.split(":");
-                    String[] parm1 = curr0.split(":");
+                    String[] parm1 = curr1.split(":");
                     int count0 = Integer.parseInt(parm0[1].trim());
                     int count1 = Integer.parseInt(parm1[1].trim());
 
-                    int compares = parm0[0].compareTo(parm0[1]);
+                    int compares = parm0[0].compareTo(parm1[0]);
 
                     if (compares == 0)
                     {

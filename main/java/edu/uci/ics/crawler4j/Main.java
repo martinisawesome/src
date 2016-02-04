@@ -43,7 +43,7 @@ public class Main
         List list2 = TextProcessor.countHighest(merged3Gram, 20);
 
         //5. What are the 500 most common words in this domain? (Ignore English stop words, which can be found, for example, here) Submit the list of the 500 most common words ordered by frequency.
-        System.out.println(String.format("500 Common Words: %s%n", printf(list1)));
+        System.out.println(String.format("500 Common Words: %n%s", printf(list1)));
         //6. What are the 20 most common 3-grams? (again ignore English stop words) 
         //A 2-gram, in this case, is a sequence of 2 words that aren’t stop words and that haven’t had a stop word in between them. Submit the list of 20 2-grams ordered by frequency.
         System.out.println(String.format("20 Common N-Grams: %n%s", printf(list2)));
