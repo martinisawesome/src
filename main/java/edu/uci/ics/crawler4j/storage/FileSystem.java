@@ -348,7 +348,7 @@ public class FileSystem
      * @return
      * @throws IOException
      */
-    public File binaryMergeAllFreq(String nameHas, int index) throws IOException
+    public static File binaryMergeAllFreq(String nameHas, int index) throws IOException
     {
         File directory = new File(CRAWLER_DIRECTORY);
         File[] files = directory.listFiles();
